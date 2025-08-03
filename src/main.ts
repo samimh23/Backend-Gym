@@ -3,9 +3,9 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
-import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -28,9 +28,10 @@ async function bootstrap() {
     }));
 
     // CORS configuration
+    const frontendUrl = configService.get('FRONTEND_URL');
     app.enableCors({
       origin: process.env.NODE_ENV === 'production' 
-        ? [configService.get('FRONTEND_URL')] 
+        ? (frontendUrl ? [frontendUrl] : false)  // ✅ Better null handling
         : true,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -44,13 +45,14 @@ async function bootstrap() {
     // Global validation pipe
     app.useGlobalPipes(
       new ValidationPipe({
-        whitelist: true, // Remove properties that don't have decorators
-        forbidNonWhitelisted: true, // Throw error if non-whitelisted properties are present
-        transform: true, // Automatically transform payloads to DTO instances
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
         transformOptions: {
-          enableImplicitConversion: true, // Allow implicit type conversion
+          enableImplicitConversion: true,
         },
-        errorHttpStatusCode: 422, // Use 422 for validation errors
+        errorHttpStatusCode: 422,
+        disableErrorMessages: process.env.NODE_ENV === 'production', // ✅ Hide detailed errors in production
       }),
     );
 
@@ -63,8 +65,9 @@ async function bootstrap() {
       new ResponseInterceptor(),
     );
 
+    // ✅ Graceful shutdown
     const port = configService.get('PORT', 3000);
-    const host = '0.0.0.0'; // Allow external connections
+    const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost'; // ✅ Security improvement
 
     await app.listen(port, host);
     
@@ -77,7 +80,21 @@ async function bootstrap() {
     if (process.env.NODE_ENV === 'development') {
       logger.log(`🎨 Prisma Studio: Run 'npm run db:studio' to open database browser`);
       logger.log(`🔍 pgAdmin: http://localhost:8080 (admin@fitness.com / admin123)`);
+      logger.log(`👤 Current User: samimh23`); // ✅ Added user context
     }
+
+    // ✅ Graceful shutdown handlers
+    process.on('SIGINT', async () => {
+      logger.log('🛑 Received SIGINT, shutting down gracefully...');
+      await app.close();
+      process.exit(0);
+    });
+
+    process.on('SIGTERM', async () => {
+      logger.log('🛑 Received SIGTERM, shutting down gracefully...');
+      await app.close();
+      process.exit(0);
+    });
 
   } catch (error) {
     logger.error('❌ Error starting application:', error);
@@ -85,4 +102,4 @@ async function bootstrap() {
   }
 }
 
-bootstrap(); 
+bootstrap();

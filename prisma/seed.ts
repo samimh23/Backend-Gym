@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, SubscriptionPlan, SubscriptionStatus, PaymentMethod, Difficulty, ActivityLevel, Gender } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -16,7 +16,7 @@ async function main() {
       password: hashedPassword,
       firstName: 'Store',
       lastName: 'Owner',
-      role: UserRole.STORE_OWNER,
+      role: 'STORE_OWNER',
       isEmailVerified: true,
       storeOwnerProfile: {
         create: {
@@ -26,6 +26,9 @@ async function main() {
           commission: 15.0,
         },
       },
+    },
+    include: {
+      storeOwnerProfile: true,
     },
   });
 
@@ -37,7 +40,7 @@ async function main() {
       firstName: 'John',
       lastName: 'Smith',
       phone: '+1234567890',
-      role: UserRole.COACH,
+      role: 'COACH',
       isEmailVerified: true,
       coachProfile: {
         create: {
@@ -58,6 +61,9 @@ async function main() {
         },
       },
     },
+    include: {
+      coachProfile: true,
+    },
   });
 
   const coach2 = await prisma.user.create({
@@ -67,7 +73,7 @@ async function main() {
       firstName: 'Sarah',
       lastName: 'Johnson',
       phone: '+1234567891',
-      role: UserRole.COACH,
+      role: 'COACH',
       isEmailVerified: true,
       coachProfile: {
         create: {
@@ -88,6 +94,9 @@ async function main() {
         },
       },
     },
+    include: {
+      coachProfile: true,
+    },
   });
 
   // Create Sample Clients
@@ -98,16 +107,16 @@ async function main() {
       firstName: 'Alice',
       lastName: 'Brown',
       phone: '+1234567892',
-      role: UserRole.CLIENT,
+      role: 'CLIENT',
       isEmailVerified: true,
       clientProfile: {
         create: {
           dateOfBirth: new Date('1990-05-15'),
-          gender: Gender.FEMALE,
+          gender: 'FEMALE',
           weight: 65.5,
           height: 168.0,
           fitnessGoal: 'Lose weight and build lean muscle',
-          activityLevel: ActivityLevel.LIGHTLY_ACTIVE,
+          activityLevel: 'LIGHTLY_ACTIVE',
           medicalConditions: [],
           preferences: {
             dietType: 'Vegetarian',
@@ -116,6 +125,9 @@ async function main() {
           },
         },
       },
+    },
+    include: {
+      clientProfile: true,
     },
   });
 
@@ -126,16 +138,16 @@ async function main() {
       firstName: 'Bob',
       lastName: 'Wilson',
       phone: '+1234567893',
-      role: UserRole.CLIENT,
+      role: 'CLIENT',
       isEmailVerified: true,
       clientProfile: {
         create: {
           dateOfBirth: new Date('1985-08-22'),
-          gender: Gender.MALE,
+          gender: 'MALE',
           weight: 85.0,
           height: 180.0,
           fitnessGoal: 'Build muscle and increase strength',
-          activityLevel: ActivityLevel.MODERATELY_ACTIVE,
+          activityLevel: 'MODERATELY_ACTIVE',
           medicalConditions: ['Lower back issues'],
           preferences: {
             dietType: 'High Protein',
@@ -145,33 +157,36 @@ async function main() {
         },
       },
     },
+    include: {
+      clientProfile: true,
+    },
   });
 
   // Create Sample Subscriptions
   const subscription1 = await prisma.subscription.create({
     data: {
-      clientId: client1.clientProfile.id,
-      coachId: coach1.coachProfile.id,
-      plan: SubscriptionPlan.MONTHLY,
+      clientId: client1.clientProfile!.id,
+      coachId: coach1.coachProfile!.id,
+      plan: 'MONTHLY',
       amount: 150.00,
-      status: SubscriptionStatus.ACTIVE,
+      status: 'ACTIVE',
       startDate: new Date(),
-      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      paymentMethod: PaymentMethod.CREDIT_CARD,
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      paymentMethod: 'CREDIT_CARD',
       paymentReference: 'stripe_pi_1234567890',
     },
   });
 
   const subscription2 = await prisma.subscription.create({
     data: {
-      clientId: client2.clientProfile.id,
-      coachId: coach2.coachProfile.id,
-      plan: SubscriptionPlan.YEARLY,
+      clientId: client2.clientProfile!.id,
+      coachId: coach2.coachProfile!.id,
+      plan: 'YEARLY',
       amount: 1200.00,
-      status: SubscriptionStatus.ACTIVE,
+      status: 'ACTIVE',
       startDate: new Date(),
-      endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
-      paymentMethod: PaymentMethod.PAYPAL,
+      endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      paymentMethod: 'PAYPAL',
       paymentReference: 'paypal_txn_1234567890',
     },
   });
@@ -179,10 +194,10 @@ async function main() {
   // Create Sample Workout Plans
   const workoutPlan1 = await prisma.workoutPlan.create({
     data: {
-      coachId: coach1.coachProfile.id,
+      coachId: coach1.coachProfile!.id,
       title: 'Beginner Strength Training',
       description: 'A comprehensive strength training program for beginners',
-      difficulty: Difficulty.BEGINNER,
+      difficulty: 'BEGINNER',
       duration: 45,
       category: 'Strength Training',
       equipment: ['Dumbbells', 'Bench', 'Resistance Bands'],
@@ -208,10 +223,10 @@ async function main() {
 
   const workoutPlan2 = await prisma.workoutPlan.create({
     data: {
-      coachId: coach2.coachProfile.id,
+      coachId: coach2.coachProfile!.id,
       title: 'Morning Yoga Flow',
       description: 'Energizing yoga sequence perfect for starting your day',
-      difficulty: Difficulty.BEGINNER,
+      difficulty: 'BEGINNER',
       duration: 30,
       category: 'Yoga',
       equipment: ['Yoga Mat'],
@@ -238,7 +253,7 @@ async function main() {
   // Create Sample Nutrition Plans
   const nutritionPlan1 = await prisma.nutritionPlan.create({
     data: {
-      coachId: coach1.coachProfile.id,
+      coachId: coach1.coachProfile!.id,
       title: 'Muscle Building Nutrition Plan',
       description: 'High protein meal plan designed to support muscle growth',
       totalCalories: 2500,
@@ -283,8 +298,8 @@ async function main() {
   // Create Sample Reviews
   await prisma.review.create({
     data: {
-      clientId: client1.clientProfile.id,
-      coachId: coach1.coachProfile.id,
+      clientId: client1.clientProfile!.id,
+      coachId: coach1.coachProfile!.id,
       rating: 5,
       comment: 'John is an amazing coach! His workout plans are challenging but achievable, and he provides great support throughout the journey.',
     },
@@ -292,8 +307,8 @@ async function main() {
 
   await prisma.review.create({
     data: {
-      clientId: client2.clientProfile.id,
-      coachId: coach2.coachProfile.id,
+      clientId: client2.clientProfile!.id,
+      coachId: coach2.coachProfile!.id,
       rating: 5,
       comment: 'Sarah\'s yoga classes have transformed my flexibility and mental well-being. Highly recommend!',
     },
@@ -306,6 +321,13 @@ async function main() {
   console.log('Coach 2: sarah.yoga@fitness.com / password123');
   console.log('Client 1: alice.client@fitness.com / password123');
   console.log('Client 2: bob.client@fitness.com / password123');
+  
+  console.log('\n📊 Created Records:');
+  console.log(`- Users: 5`);
+  console.log(`- Subscriptions: 2`);
+  console.log(`- Workout Plans: 2`);
+  console.log(`- Nutrition Plans: 1`);
+  console.log(`- Reviews: 2`);
 }
 
 main()
